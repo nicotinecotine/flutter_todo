@@ -200,6 +200,7 @@ class _MySliverTasksState extends State<MySliverTasks> {
                             editProvider.changeToDo('');
                             editProvider.changeDate(DateTime.now());
                             editProvider.changeImportancy('Нет');
+                            editProvider.changeSwitch(false);
                           },
                           child: const Text(
                             'Новое',
@@ -404,6 +405,7 @@ class _MySliverTasksState extends State<MySliverTasks> {
                             editProvider.changeToDo('');
                             editProvider.changeDate(DateTime.now());
                             editProvider.changeImportancy('Нет');
+                            editProvider.changeSwitch(false);
                           },
                           child: const Text(
                             'Новое',
