@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 class ScrollProvider extends ChangeNotifier {
-  final ScrollController _scrollController = ScrollController();
+  ScrollController _scrollController = ScrollController();
   double _titleLeftPadding = 70.0;
   double _titleBottomPadding = 0;
   double _bottomEyeTransparency = 1;

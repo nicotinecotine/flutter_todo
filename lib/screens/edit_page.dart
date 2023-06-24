@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_todo/providers/task_provider.dart';
 import 'package:flutter_todo/providers/edit_provider.dart';
 import 'package:flutter_todo/models/task_model.dart';
-import 'package:flutter_todo/constants/colors.dart';
 
 class EditPage extends StatelessWidget {
   const EditPage({super.key});
@@ -12,7 +10,7 @@ class EditPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: Color(0xffF7F6F2),
       body: CustomScrollView(
         slivers: [
           EditSliverAppBar(),
@@ -31,71 +29,38 @@ class EditSliverAppBar extends StatelessWidget {
     TaskProvider taskProvider = Provider.of<TaskProvider>(context);
     EditProvider editProvider = Provider.of<EditProvider>(context);
     return SliverAppBar(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: const Color(0xffF7F6F2),
       pinned: true,
       automaticallyImplyLeading: false,
       leading: IconButton(
         padding: EdgeInsets.zero,
-        color: AppColors.textColor,
+        color: Colors.black,
         icon: const Icon(Icons.close),
         onPressed: () {
           Navigator.pop(context);
         },
       ),
       actions: [
-        editProvider.isEdit
-            ? Padding(
-                padding: const EdgeInsets.only(right: 5),
-                child: TextButton(
-                  onPressed: () {
-                    if (editProvider.toDo != '') {
-                      if (editProvider.isCompleted) {
-                        taskProvider.completedTasks[editProvider.index] = Task(
-                          editProvider.toDo,
-                          editProvider.importancy,
-                          editProvider.date,
-                          editProvider.isCompleted,
-                          editProvider.isSwitched,
-                        );
-                      } else {
-                        taskProvider.tasksNotCompleted[editProvider.index] =
-                            Task(
-                                editProvider.toDo,
-                                editProvider.importancy,
-                                editProvider.date,
-                                editProvider.isCompleted,
-                                editProvider.isSwitched);
-                      }
-                      taskProvider.updateList();
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.save,
-                    style: const TextStyle(color: AppColors.indigoColor),
-                  ),
-                ),
-              )
-            : Padding(
-                padding: const EdgeInsets.only(right: 5),
-                child: TextButton(
-                  onPressed: () {
-                    if (editProvider.toDo != '') {
-                      taskProvider.addTask(
-                          editProvider.toDo,
-                          editProvider.importancy,
-                          editProvider.date,
-                          editProvider.isCompleted,
-                          editProvider.isSwitched);
-                      Navigator.pop(context);
-                    }
-                  },
-                  child: Text(
-                    AppLocalizations.of(context)!.save,
-                    style: const TextStyle(color: AppColors.indigoColor),
-                  ),
-                ),
-              ),
+        Padding(
+          padding: const EdgeInsets.only(right: 5),
+          child: TextButton(
+            onPressed: () {
+              if (editProvider.toDo != '') {
+                taskProvider.addTask(
+                  editProvider.toDo,
+                  editProvider.importancy,
+                  editProvider.date,
+                  editProvider.isCompleted,
+                );
+                Navigator.pop(context);
+              }
+            },
+            child: const Text(
+              'СОХРАНИТЬ',
+              style: TextStyle(color: Colors.indigo),
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -120,27 +85,26 @@ class EditSliverBody extends StatelessWidget {
               bottom: 2,
             ),
             decoration: BoxDecoration(
-              color: AppColors.foregroundColor,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(8.0),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadowColor.withOpacity(0.3),
+                  color: Colors.grey.withOpacity(0.3),
                   spreadRadius: 1,
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
-            child: TextFormField(
-              initialValue: editProvider.toDo,
+            child: TextField(
               onChanged: (value) {
                 editProvider.changeToDo(value);
               },
               maxLines: null,
               decoration: InputDecoration(
-                hintText: AppLocalizations.of(context)!.hintText,
+                hintText: editProvider.toDo,
                 labelStyle: const TextStyle(
-                  color: AppColors.shadowColor,
+                  color: Colors.grey,
                   fontSize: 16,
                 ),
                 border: const OutlineInputBorder(
@@ -151,9 +115,9 @@ class EditSliverBody extends StatelessWidget {
           ),
           Container(
             padding: const EdgeInsets.only(top: 16, left: 16),
-            child: Text(
-              AppLocalizations.of(context)!.importance,
-              style: const TextStyle(
+            child: const Text(
+              'Важность',
+              style: TextStyle(
                 fontSize: 16,
               ),
             ),
@@ -165,18 +129,14 @@ class EditSliverBody extends StatelessWidget {
             ),
             child: DropdownButtonFormField<String>(
               value: editProvider.importancy,
-              items: [
-                AppLocalizations.of(context)!.basic,
-                AppLocalizations.of(context)!.low,
-                AppLocalizations.of(context)!.important,
-              ].map((String value) {
+              items: ['Нет', 'Низкая', '!! Важно'].map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
                   child: Text(
                     value,
-                    style: value == AppLocalizations.of(context)!.important
-                        ? const TextStyle(color: AppColors.attentionColor)
-                        : const TextStyle(color: AppColors.textColor),
+                    style: value == '!! Важно'
+                        ? const TextStyle(color: Colors.red)
+                        : const TextStyle(color: Colors.black),
                   ),
                 );
               }).toList(),
@@ -206,9 +166,9 @@ class EditSliverBody extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.only(top: 8, left: 16),
-                    child: Text(
-                      AppLocalizations.of(context)!.makeItTo,
-                      style: const TextStyle(
+                    child: const Text(
+                      'Сделать до',
+                      style: TextStyle(
                         fontSize: 16,
                       ),
                     ),
@@ -224,7 +184,7 @@ class EditSliverBody extends StatelessWidget {
                             editProvider.date.toString().split(' ')[0],
                             style: const TextStyle(
                               fontSize: 14,
-                              color: AppColors.indigoColor,
+                              color: Colors.indigo,
                             ),
                           ),
                         )
@@ -259,34 +219,56 @@ class EditSliverBody extends StatelessWidget {
           const Divider(),
           Padding(
             padding: const EdgeInsets.only(left: 0, top: 8),
-            child: editProvider.isEdit
+            child: editProvider.toDo != ''
                 ? TextButton(
                     onPressed: () {
-                      if (editProvider.isCompleted) {
-                        taskProvider.completedTasks.removeAt(
-                          editProvider.index,
-                        );
-                        taskProvider.updateCount();
-                      } else {
-                        taskProvider.tasksNotCompleted.removeAt(
-                          editProvider.index,
-                        );
-                        taskProvider.updateCount();
-                      }
                       Navigator.pop(context);
+                      if (taskProvider.allTasks.contains(
+                        Task(
+                          editProvider.toDo,
+                          editProvider.importancy,
+                          editProvider.date,
+                          editProvider.isCompleted,
+                        ),
+                      )) {
+                        taskProvider.allTasks.remove(
+                          Task(
+                            editProvider.toDo,
+                            editProvider.importancy,
+                            editProvider.date,
+                            editProvider.isCompleted,
+                          ),
+                        );
+                      } else if (taskProvider.tasksNotCompleted.contains(
+                        Task(
+                          editProvider.toDo,
+                          editProvider.importancy,
+                          editProvider.date,
+                          editProvider.isCompleted,
+                        ),
+                      )) {
+                        taskProvider.tasksNotCompleted.remove(
+                          Task(
+                            editProvider.toDo,
+                            editProvider.importancy,
+                            editProvider.date,
+                            editProvider.isCompleted,
+                          ),
+                        );
+                      }
                     },
-                    child: Row(
+                    child: const Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.delete,
-                          color: AppColors.attentionColor,
+                          color: Colors.red,
                         ),
                         Padding(
-                          padding: const EdgeInsets.only(left: 6),
+                          padding: EdgeInsets.only(left: 6),
                           child: Text(
-                            AppLocalizations.of(context)!.delete,
-                            style: const TextStyle(
-                              color: AppColors.attentionColor,
+                            'Удалить',
+                            style: TextStyle(
+                              color: Colors.red,
                               fontSize: 16,
                             ),
                           ),
@@ -294,17 +276,20 @@ class EditSliverBody extends StatelessWidget {
                       ],
                     ),
                   )
-                : TextButton(
+                : const TextButton(
                     onPressed: null,
                     child: Row(
                       children: [
-                        const Icon(Icons.delete, color: AppColors.shadowColor),
+                        Icon(
+                          Icons.delete,
+                          color: Colors.grey,
+                        ),
                         Padding(
-                          padding: const EdgeInsets.only(left: 6),
+                          padding: EdgeInsets.only(left: 6),
                           child: Text(
-                            AppLocalizations.of(context)!.delete,
-                            style: const TextStyle(
-                              color: AppColors.shadowColor,
+                            'Удалить',
+                            style: TextStyle(
+                              color: Colors.grey,
                               fontSize: 16,
                             ),
                           ),

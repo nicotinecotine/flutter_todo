@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_todo/providers/edit_provider.dart';
 import 'package:flutter_todo/providers/scroll_provider.dart';
 import 'package:flutter_todo/providers/task_provider.dart';
 import 'package:flutter_todo/models/task_model.dart';
-import 'package:flutter_todo/constants/colors.dart';
-import 'package:flutter_todo/screens/widgets/new_button_widget.dart';
-import 'package:flutter_todo/data/networking.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});
@@ -17,31 +13,29 @@ class MainPage extends StatelessWidget {
     ScrollProvider scroll = Provider.of<ScrollProvider>(context);
     EditProvider editProvider = Provider.of<EditProvider>(context);
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: const Color(0xffF7F6F2),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.indigoColor,
+        backgroundColor: Colors.indigo,
         child: const Icon(
           Icons.add,
-          color: AppColors.backgroundColor,
+          color: Colors.white,
         ),
         onPressed: () {
-          editProvider.edit('', 'Нет', DateTime.now(), false, false, false, 0);
           Navigator.pushNamed(context, '/editPage');
+          editProvider.changeToDo('');
+          editProvider.changeDate(DateTime.now());
+          editProvider.changeImportancy('Нет');
+          editProvider.changeSwitch(false);
         },
       ),
-      body: RefreshIndicator(
-        displacement: 15,
-        triggerMode: RefreshIndicatorTriggerMode.onEdge,
-        onRefresh: updateTasksList,
-        child: CustomScrollView(
-          controller: scroll.scrollController,
-          slivers: const <Widget>[
-            MySliverAppBar(),
-            MySliverRow(),
-            MySliverTasks(),
-            MySliverSizedBox(),
-          ],
-        ),
+      body: CustomScrollView(
+        controller: scroll.scrollController,
+        slivers: const <Widget>[
+          MySliverAppBar(),
+          MySliverRow(),
+          MySliverTasks(),
+          MySliverSizedBox(),
+        ],
       ),
     );
   }
@@ -57,7 +51,7 @@ class MySliverAppBar extends StatelessWidget {
     return SliverAppBar(
       pinned: true,
       expandedHeight: MediaQuery.of(context).size.height / 5.4,
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: const Color(0xffF7F6F2),
       actions: [
         if (scroll.topEyeVisibility)
           !taskProvider.isCompletedVisible
@@ -65,7 +59,7 @@ class MySliverAppBar extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   icon: const Icon(
                     Icons.remove_red_eye,
-                    color: AppColors.indigoColor,
+                    color: Color.fromRGBO(63, 81, 181, 1),
                   ),
                   onPressed: () {
                     taskProvider.changeVisibility();
@@ -75,7 +69,7 @@ class MySliverAppBar extends StatelessWidget {
                   padding: EdgeInsets.zero,
                   icon: const Icon(
                     Icons.visibility_off,
-                    color: AppColors.indigoColor,
+                    color: Color.fromRGBO(63, 81, 181, 1),
                   ),
                   onPressed: () {
                     taskProvider.changeVisibility();
@@ -88,11 +82,11 @@ class MySliverAppBar extends StatelessWidget {
           left: scroll.titleLeftPadding,
           bottom: scroll.titleBottomPadding,
         ),
-        title: Text(
-          AppLocalizations.of(context)!.title,
-          style: const TextStyle(
+        title: const Text(
+          'Мои дела',
+          style: TextStyle(
             fontSize: 24,
-            color: AppColors.textColor,
+            color: Colors.black,
           ),
         ),
       ),
@@ -118,10 +112,10 @@ class MySliverRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              '${AppLocalizations.of(context)!.done} ${taskProvider.completedTaskCount}',
+              'Выполнено — ${taskProvider.allTasks.length - taskProvider.tasksNotCompleted.length}',
               style: const TextStyle(
                 fontSize: 16,
-                color: AppColors.shadowColor,
+                color: Color(0xff8E8E93),
               ),
             ),
             !taskProvider.isCompletedVisible
@@ -129,9 +123,8 @@ class MySliverRow extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     icon: Icon(
                       Icons.remove_red_eye,
-                      color: AppColors.indigoColor.withOpacity(
-                        scroll.bottomEyeTransparency,
-                      ),
+                      color: Color.fromRGBO(
+                          63, 81, 181, scroll.bottomEyeTransparency),
                     ),
                     onPressed: () {
                       taskProvider.changeVisibility();
@@ -141,9 +134,8 @@ class MySliverRow extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     icon: Icon(
                       Icons.visibility_off,
-                      color: AppColors.indigoColor.withOpacity(
-                        scroll.bottomEyeTransparency,
-                      ),
+                      color: Color.fromRGBO(
+                          63, 81, 181, scroll.bottomEyeTransparency),
                     ),
                     onPressed: () {
                       taskProvider.changeVisibility();
@@ -174,13 +166,13 @@ class _MySliverTasksState extends State<MySliverTasks> {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadowColor.withOpacity(0.5),
+              color: Colors.grey.withOpacity(0.5),
               spreadRadius: 1,
               blurRadius: 5,
               offset: const Offset(0, 3),
             ),
           ],
-          color: AppColors.foregroundColor,
+          color: Colors.white,
           borderRadius: const BorderRadius.all(
             Radius.circular(8),
           ),
@@ -189,15 +181,37 @@ class _MySliverTasksState extends State<MySliverTasks> {
             ? ListView.builder(
                 padding: EdgeInsets.zero,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: (taskProvider.completedTasks +
-                        taskProvider.tasksNotCompleted)
-                    .length,
+                itemCount: taskProvider.allTasks.length,
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
-                  final item = (taskProvider.completedTasks +
-                      taskProvider.tasksNotCompleted)[index];
+                  final item = taskProvider.allTasks[index];
                   if (item.title == 'workingtitle256') {
-                    return const NewButton();
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 50,
+                          top: 6,
+                          bottom: 6,
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/editPage');
+                            editProvider.changeToDo('');
+                            editProvider.changeDate(DateTime.now());
+                            editProvider.changeImportancy('Нет');
+                            editProvider.changeSwitch(false);
+                          },
+                          child: const Text(
+                            'Новое',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
                   } else {
                     return ClipRect(
                       child: Dismissible(
@@ -209,8 +223,6 @@ class _MySliverTasksState extends State<MySliverTasks> {
                             setState(() {
                               item.isDone = true;
                               taskProvider.tasksNotCompleted.remove(item);
-                              taskProvider.completedTasks.add(item);
-                              taskProvider.updateCount();
                             });
                             return false;
                           } else if (direction == DismissDirection.endToStart) {
@@ -219,53 +231,47 @@ class _MySliverTasksState extends State<MySliverTasks> {
                           return null;
                         },
                         background: Container(
-                          color: AppColors.activeCheckBoxColor,
+                          color: Colors.green,
                           child: const Align(
                             alignment: Alignment.centerLeft,
                             child: Padding(
                               padding: EdgeInsets.only(left: 20.0),
                               child: Icon(
                                 Icons.check,
-                                color: AppColors.foregroundColor,
+                                color: Colors.white,
                               ),
                             ),
                           ),
                         ),
                         secondaryBackground: Container(
-                          color: AppColors.attentionColor,
+                          color: Colors.red,
                           child: const Align(
                             alignment: Alignment.centerRight,
                             child: Padding(
                               padding: EdgeInsets.only(right: 20.0),
                               child: Icon(
                                 Icons.delete,
-                                color: AppColors.foregroundColor,
+                                color: Colors.white,
                               ),
                             ),
                           ),
                         ),
                         onDismissed: (direction) {
                           if (direction == DismissDirection.startToEnd) {
-                            if (item.isDone == false) {
-                              setState(() {
-                                item.isDone = true;
-                                taskProvider.tasksNotCompleted.remove(item);
-                                taskProvider.completedTasks.add(item);
-                                taskProvider.updateCount();
-                              });
-                            }
+                            setState(() {
+                              item.isDone = true;
+                              taskProvider.tasksNotCompleted.removeAt(index);
+                            });
                           } else if (direction == DismissDirection.endToStart) {
-                            if (item.isDone == true) {
-                              setState(() {
-                                taskProvider.completedTasks.remove(item);
-                              });
-                            } else {
-                              setState(() {
-                                taskProvider.tasksNotCompleted.remove(item);
-                              });
-                            }
+                            setState(() {
+                              if (taskProvider.tasksNotCompleted
+                                  .contains(item)) {
+                                taskProvider.tasksNotCompleted.removeAt(index);
+                              }
+
+                              taskProvider.allTasks.removeAt(index);
+                            });
                           }
-                          taskProvider.updateCount();
                         },
                         child: ListTile(
                           title: Container(
@@ -278,54 +284,40 @@ class _MySliverTasksState extends State<MySliverTasks> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Checkbox(
-                                      activeColor:
-                                          AppColors.activeCheckBoxColor,
+                                      activeColor: Colors.green,
                                       onChanged: (e) {
                                         setState(() {
                                           item.isDone = !item.isDone;
                                           if (item.isDone == false) {
-                                            taskProvider.completedTasks
-                                                .remove(item);
                                             taskProvider.tasksNotCompleted
                                                 .removeLast();
                                             taskProvider.tasksNotCompleted
                                                 .add(item);
                                             taskProvider.tasksNotCompleted.add(
-                                              Task(
-                                                'workingtitle256',
-                                                'no',
-                                                DateTime.now(),
-                                                false,
-                                                false,
-                                              ),
-                                            );
+                                                Task('workingtitle256', 'no',
+                                                    DateTime.now(), false));
                                           } else {
                                             taskProvider.tasksNotCompleted
                                                 .remove(item);
-                                            taskProvider.completedTasks
-                                                .add(item);
                                           }
                                         });
-                                        taskProvider.updateCount();
                                       },
                                       value: item.isDone,
                                     ),
-                                    if (item.importance ==
-                                        AppLocalizations.of(context)!.low)
+                                    if (item.importance == 'Низкая')
                                       Container(
                                         padding: EdgeInsets.zero,
                                         child: const Icon(
                                             Icons.keyboard_arrow_down),
                                       )
-                                    else if (item.importance ==
-                                        AppLocalizations.of(context)!.important)
+                                    else if (item.importance == '!! Важно')
                                       Container(
                                         padding:
                                             const EdgeInsets.only(right: 2),
                                         child: const Text(
                                           '!!',
                                           style: TextStyle(
-                                            color: AppColors.attentionColor,
+                                            color: Colors.red,
                                             fontSize: 20,
                                             fontWeight: FontWeight.w600,
                                           ),
@@ -333,41 +325,36 @@ class _MySliverTasksState extends State<MySliverTasks> {
                                       ),
                                     Container(
                                       padding: EdgeInsets.zero,
-                                      child: SizedBox(
-                                        width:
-                                            MediaQuery.of(context).size.width /
-                                                2.5,
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            !item.isDone
-                                                ? Text(
-                                                    item.title.trim(),
-                                                  )
-                                                : Text(
-                                                    item.title.trim(),
-                                                    style: const TextStyle(
-                                                      color:
-                                                          AppColors.shadowColor,
-                                                      decoration: TextDecoration
-                                                          .lineThrough,
-                                                      decorationColor:
-                                                          AppColors.shadowColor,
-                                                    ),
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          !item.isDone
+                                              ? Text(
+                                                  item.title.trim(),
+                                                )
+                                              : Text(
+                                                  item.title.trim(),
+                                                  style: const TextStyle(
+                                                    color: Colors.grey,
+                                                    decoration: TextDecoration
+                                                        .lineThrough,
+                                                    decorationColor:
+                                                        Colors.grey,
                                                   ),
-                                            if (item.isDateVisible)
-                                              Text(
-                                                item.date
-                                                    .toString()
-                                                    .split(' ')[0],
-                                                style: const TextStyle(
-                                                  color: AppColors.shadowColor,
-                                                  fontSize: 14,
                                                 ),
-                                              )
-                                          ],
-                                        ),
+                                          if (item.date.day !=
+                                              DateTime.now().day)
+                                            Text(
+                                              item.date
+                                                  .toString()
+                                                  .split(' ')[0],
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
+                                              ),
+                                            )
+                                        ],
                                       ),
                                     ),
                                   ],
@@ -381,16 +368,11 @@ class _MySliverTasksState extends State<MySliverTasks> {
                               icon: const Icon(Icons.info_outline),
                               onPressed: () {
                                 Navigator.pushNamed(context, '/editPage');
-                                editProvider.edit(
-                                  item.title,
-                                  item.importance,
-                                  item.date!,
-                                  item.isDateVisible,
-                                  true,
-                                  item.isDone,
-                                  item.isDone
-                                      ? index
-                                      : index - taskProvider.completedTaskCount,
+                                editProvider.changeToDo(item.title);
+                                editProvider.changeDate(item.date);
+                                editProvider.changeImportancy(item.importance);
+                                editProvider.changeSwitch(
+                                  item.date.day != DateTime.now().day,
                                 );
                               },
                             ),
@@ -409,34 +391,59 @@ class _MySliverTasksState extends State<MySliverTasks> {
                 itemBuilder: (context, index) {
                   final item = taskProvider.tasksNotCompleted[index];
                   if (item.title == 'workingtitle256') {
-                    return const NewButton();
+                    return Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          left: 50,
+                          top: 6,
+                          bottom: 6,
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/editPage');
+                            editProvider.changeToDo('');
+                            editProvider.changeDate(DateTime.now());
+                            editProvider.changeImportancy('Нет');
+                            editProvider.changeSwitch(false);
+                          },
+                          child: const Text(
+                            'Новое',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
                   } else {
                     return ClipRect(
                       child: Dismissible(
                         key: Key(item.title),
                         direction: DismissDirection.horizontal,
                         background: Container(
-                          color: AppColors.activeCheckBoxColor,
+                          color: Colors.green,
                           child: const Align(
                             alignment: Alignment.centerLeft,
                             child: Padding(
                               padding: EdgeInsets.only(left: 20.0),
                               child: Icon(
                                 Icons.check,
-                                color: AppColors.foregroundColor,
+                                color: Colors.white,
                               ),
                             ),
                           ),
                         ),
                         secondaryBackground: Container(
-                          color: AppColors.attentionColor,
+                          color: Colors.red,
                           child: const Align(
                             alignment: Alignment.centerRight,
                             child: Padding(
                               padding: EdgeInsets.only(right: 20.0),
                               child: Icon(
                                 Icons.delete,
-                                color: AppColors.foregroundColor,
+                                color: Colors.white,
                               ),
                             ),
                           ),
@@ -444,16 +451,15 @@ class _MySliverTasksState extends State<MySliverTasks> {
                         onDismissed: (direction) {
                           if (direction == DismissDirection.startToEnd) {
                             setState(() {
-                              taskProvider.tasksNotCompleted.remove(item);
                               item.isDone = true;
-                              taskProvider.completedTasks.add(item);
+                              taskProvider.tasksNotCompleted.removeAt(index);
                             });
                           } else if (direction == DismissDirection.endToStart) {
                             setState(() {
-                              taskProvider.tasksNotCompleted.remove(item);
+                              taskProvider.tasksNotCompleted.removeAt(index);
+                              taskProvider.allTasks.remove(item);
                             });
                           }
-                          taskProvider.updateCount();
                         },
                         child: ListTile(
                           title: Row(
@@ -462,95 +468,80 @@ class _MySliverTasksState extends State<MySliverTasks> {
                               Row(
                                 children: [
                                   Checkbox(
-                                    activeColor: AppColors.activeCheckBoxColor,
+                                    activeColor: Colors.green,
                                     onChanged: (e) {
-                                      if (item.isDone == false) {
+                                      if (item.isDone == true) {
                                         setState(() {
+                                          item.isDone = !item.isDone;
                                           taskProvider.tasksNotCompleted
-                                              .remove(item);
-                                          item.isDone = true;
-                                          taskProvider.completedTasks.add(item);
-                                          taskProvider.updateCount();
-                                        });
-                                      } else {
-                                        setState(() {
-                                          taskProvider.completedTasks
-                                              .remove(item);
-                                          item.isDone = false;
-                                          taskProvider.tasksNotCompleted
-                                              .add(item);
-                                          taskProvider.completedTasks.add(item);
-                                          taskProvider.updateCount();
+                                              .removeAt(index);
                                         });
                                       }
+                                      setState(() {
+                                        item.isDone = !item.isDone;
+                                        taskProvider.tasksNotCompleted
+                                            .removeAt(index);
+                                      });
                                     },
                                     value: item.isDone,
                                   ),
-                                  if (item.importance ==
-                                      AppLocalizations.of(context)!.low)
+                                  if (item.importance == 'Низкая')
                                     Container(
                                       padding: EdgeInsets.zero,
                                       child:
                                           const Icon(Icons.keyboard_arrow_down),
                                     )
-                                  else if (item.importance ==
-                                      AppLocalizations.of(context)!.important)
+                                  else if (item.importance == '!! Важно')
                                     Container(
                                       padding: const EdgeInsets.only(right: 2),
                                       child: const Text(
                                         '!!',
                                         style: TextStyle(
-                                          color: AppColors.attentionColor,
+                                          color: Colors.red,
                                           fontSize: 20,
                                           fontWeight: FontWeight.w600,
                                         ),
                                       ),
                                     ),
-                                  SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width / 2.5,
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          padding: EdgeInsets.zero,
-                                          child: Text(
-                                            item.title.trim(),
-                                          ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        padding: EdgeInsets.zero,
+                                        child: Text(
+                                          item.title..trim(),
                                         ),
-                                        if (item.isDateVisible)
-                                          Text(
-                                            item.date.toString().split(' ')[0],
-                                            style: const TextStyle(
-                                              color: AppColors.shadowColor,
-                                              fontSize: 14,
-                                            ),
-                                          )
-                                      ],
-                                    ),
+                                      ),
+                                      if (item.date.day != DateTime.now().day)
+                                        Text(
+                                          item.date.toString().split(' ')[0],
+                                          style: const TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 14,
+                                          ),
+                                        )
+                                    ],
                                   ),
                                 ],
                               ),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 2),
+                                child: IconButton(
+                                  icon: const Icon(Icons.info_outline),
+                                  onPressed: () {
+                                    Navigator.pushNamed(context, '/editPage');
+                                    editProvider.changeToDo(item.title);
+                                    editProvider.changeDate(item.date);
+                                    editProvider
+                                        .changeImportancy(item.importance);
+                                    editProvider.changeSwitch(
+                                      item.date.day != DateTime.now().day,
+                                    );
+                                  },
+                                ),
+                              ),
                             ],
-                          ),
-                          trailing: Padding(
-                            padding: const EdgeInsets.only(right: 2),
-                            child: IconButton(
-                              icon: const Icon(Icons.info_outline),
-                              onPressed: () {
-                                Navigator.pushNamed(context, '/editPage');
-                                editProvider.edit(
-                                  item.title,
-                                  item.importance,
-                                  item.date!,
-                                  item.isDateVisible,
-                                  true,
-                                  item.isDone,
-                                  index,
-                                );
-                              },
-                            ),
                           ),
                         ),
                       ),
